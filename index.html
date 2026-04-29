@@ -47,12 +47,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
 
 /* 闪卡 */
-.flashcard-container { perspective: 1000px; margin-bottom: 16px; }
-.flashcard { width: 100%; min-height: 300px; position: relative; cursor: pointer; transition: transform 0.6s; transform-style: preserve-3d; }
+.flashcard { width: 100%; min-height: 300px; position: relative; cursor: pointer; }
 .flashcard.flipped { transform: rotateY(180deg); }
 .card-face { position: absolute; width: 100%; min-height: 300px; backface-visibility: hidden; border-radius: 14px; padding: 28px; display: flex; flex-direction: column; justify-content: center; }
 .card-front { background: var(--bg2); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-.card-back { background: var(--success-bg); border: 1px solid #BBF7D0; transform: rotateY(180deg); }
+.card-back { background: var(--success-bg); border: 1px solid #BBF7D0; }
 .card-question { font-size: 17px; line-height: 1.7; margin-bottom: 16px; }
 .card-answer { font-size: 15px; line-height: 1.7; }
 .card-answer .correct { color: var(--success); font-weight: bold; font-size: 20px; }
@@ -102,7 +101,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .knowledge-card.imp-2 { border-left-color: var(--warning); }
 .knowledge-card.imp-1 { border-left-color: var(--primary); }
 .knowledge-card .kn-chapter { font-size: 12px; color: var(--text2); }
-.knowledge-card .kn-title { font-size: 15px; font-weight: 600; margin: 4px 0; }
+.knowledge-card .kn-title { font-size: 15px; font-weight: 600; margin: 4px 0; word-break: break-word; }
 .knowledge-card .kn-content { font-size: 13px; color: var(--text2); line-height: 1.6; margin-top: 8px; display: none; }
 .knowledge-card.expanded .kn-content { display: block; }
 .knowledge-card .kn-tags { display: flex; gap: 6px; margin-top: 6px; }
@@ -442,6 +441,8 @@ function buildFlashDeck() {
   showFlashcard();
 }
 
+let showingBack = false;
+
 function showFlashcard() {
   const counter = document.getElementById('card-counter');
   if (flashDeck.length === 0) {
@@ -452,27 +453,26 @@ function showFlashcard() {
   }
   const idx = flashIndex % flashDeck.length;
   const card = flashDeck[idx];
-  const fc = document.getElementById('flashcard');
-  fc.classList.remove('flipped');
-  
+  showingBack = false;
+
   counter.textContent = (idx + 1) + ' / ' + flashDeck.length;
-  
+
   const front = document.getElementById('card-front');
   const back = document.getElementById('card-back');
-  
+
   if (flashType === 'knowledge') {
     const impLabel = ['', '常考', '高频', '必考'][card.importance] || '';
     const impClass = 'imp-' + card.importance;
     let tags = '';
     if (card.is_number) tags += '<span class="kn-tag number">数字考点</span>';
     if (card.is_confusing) tags += '<span class="kn-tag confusing">易混淆</span>';
-    
+
     front.innerHTML = `
       <span class="card-importance ${impClass}">${impLabel}</span>
       <div class="card-question">${card.title || card.section || ''}</div>
       <div style="font-size:13px;color:var(--text2)">${card.chapter || ''}</div>
       <div style="margin-top:8px">${tags}</div>
-      <div style="font-size:13px;color:var(--text2);margin-top:auto">点击翻转查看</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:auto">点击查看答案</div>
     `;
     back.innerHTML = `
       <div class="card-answer md-content">${renderMarkdown(card.content||'')}</div>
@@ -483,28 +483,43 @@ function showFlashcard() {
       <div style="font-size:14px;color:var(--text2);line-height:1.7">
         A. ${card.options?.A||''}<br>B. ${card.options?.B||''}<br>C. ${card.options?.C||''}<br>D. ${card.options?.D||''}
       </div>
-      <div style="font-size:13px;color:var(--text2);margin-top:auto">点击翻转查看答案</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:auto">点击查看答案</div>
     `;
     back.innerHTML = `
       <div class="card-answer"><span class="correct">答案：${card.answer}</span></div>
       ${card.analysis ? '<div class="card-analysis md-content">'+renderMarkdown(card.analysis)+'</div>' : ''}
     `;
   }
+
+  document.getElementById('card-front').style.display = 'flex';
+  document.getElementById('card-back').style.display = 'none';
 }
 
 function flipCard() {
-  document.getElementById('flashcard').classList.toggle('flipped');
+  const front = document.getElementById('card-front');
+  const back = document.getElementById('card-back');
+  if (showingBack) {
+    front.style.display = 'flex';
+    back.style.display = 'none';
+    showingBack = false;
+  } else {
+    front.style.display = 'none';
+    back.style.display = 'flex';
+    showingBack = true;
+  }
 }
 
 function prevCard() {
   if (flashDeck.length === 0) return;
   flashIndex = (flashIndex - 1 + flashDeck.length) % flashDeck.length;
+  showingBack = false;
   showFlashcard();
 }
 
 function nextCard() {
   if (flashDeck.length === 0) return;
   flashIndex = (flashIndex + 1) % flashDeck.length;
+  showingBack = false;
   showFlashcard();
 }
 
@@ -516,11 +531,12 @@ function rateCard(rating) {
   if (!p[currentSubject].cards) p[currentSubject].cards = {};
   p[currentSubject].cards[card._id] = rating;
   saveProgress(p);
-  
+
   if (rating === 0) {
     flashDeck.push(card);
   }
   flashIndex++;
+  showingBack = false;
   showFlashcard();
   updateStats();
 }
