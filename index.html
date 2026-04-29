@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>基金从业资格考试 · 复习助手</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --primary: #4F46E5;
+  --primary-light: #6366F1;
+  --primary-bg: #EEF2FF;
+  --success: #16A34A;
+  --success-bg: #F0FDF4;
+  --danger: #DC2626;
+  --danger-bg: #FEF2F2;
+  --warning: #D97706;
+  --warning-bg: #FFFBEB;
+  --bg: #F8FAFC;
+  --bg2: #FFFFFF;
+  --bg3: #F1F5F9;
+  --text: #1E293B;
+  --text2: #64748B;
+  --border: #E2E8F0;
+  --border2: #CBD5E1;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+.container { max-width: 800px; margin: 0 auto; padding: 16px; }
+
+/* 顶部导航 */
+.nav { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.nav-btn { padding: 10px 20px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); border-radius: 10px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+.nav-btn:hover { border-color: var(--primary-light); color: var(--primary); }
+.nav-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+.nav-title { font-size: 18px; font-weight: 700; margin-right: auto; color: var(--text); }
+
+/* 科目选择 */
+.subject-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+.subject-btn { flex: 1; padding: 12px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); border-radius: 10px; cursor: pointer; font-size: 14px; text-align: center; transition: all 0.2s; }
+.subject-btn:hover { border-color: var(--primary-light); color: var(--primary); }
+.subject-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+
+/* 统计卡片 */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+.stat-num { font-size: 26px; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+/* 闪卡 */
+.flashcard-container { perspective: 1000px; margin-bottom: 16px; }
+.flashcard { width: 100%; min-height: 300px; position: relative; cursor: pointer; transition: transform 0.6s; transform-style: preserve-3d; }
+.flashcard.flipped { transform: rotateY(180deg); }
+.card-face { position: absolute; width: 100%; min-height: 300px; backface-visibility: hidden; border-radius: 14px; padding: 28px; display: flex; flex-direction: column; justify-content: center; }
+.card-front { background: var(--bg2); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.card-back { background: var(--success-bg); border: 1px solid #BBF7D0; transform: rotateY(180deg); }
+.card-question { font-size: 17px; line-height: 1.7; margin-bottom: 16px; }
+.card-answer { font-size: 15px; line-height: 1.7; }
+.card-answer .correct { color: var(--success); font-weight: bold; font-size: 20px; }
+.card-analysis { margin-top: 12px; font-size: 14px; color: var(--text2); line-height: 1.6; border-top: 1px solid var(--border); padding-top: 12px; }
+.card-importance { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 12px; font-weight: 600; }
+.imp-3 { background: #FEE2E2; color: #991B1B; }
+.imp-2 { background: #FEF3C7; color: #92400E; }
+.imp-1 { background: var(--primary-bg); color: #3730A3; }
+
+/* 闪卡导航 */
+.card-nav { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; justify-content: center; }
+.card-nav-btn { width: 44px; height: 44px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.card-nav-btn:hover { border-color: var(--primary); color: var(--primary); }
+.card-counter { font-size: 14px; color: var(--text2); min-width: 80px; text-align: center; }
+
+/* 闪卡评分按钮 */
+.card-actions { display: flex; gap: 10px; }
+.card-btn { flex: 1; padding: 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; cursor: pointer; font-weight: 600; transition: all 0.2s; background: var(--bg2); }
+.btn-wrong { color: var(--danger); border-color: #FECACA; }
+.btn-wrong:hover { background: var(--danger-bg); border-color: var(--danger); }
+.btn-maybe { color: var(--warning); border-color: #FDE68A; }
+.btn-maybe:hover { background: var(--warning-bg); border-color: var(--warning); }
+.btn-right { color: var(--success); border-color: #BBF7D0; }
+.btn-right:hover { background: var(--success-bg); border-color: var(--success); }
+
+/* 刷题模式 */
+.quiz-question { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 16px; }
+.quiz-stem { font-size: 16px; line-height: 1.7; margin-bottom: 20px; }
+.quiz-options { display: flex; flex-direction: column; gap: 10px; }
+.quiz-option { padding: 14px 18px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; font-size: 14px; transition: all 0.2s; background: var(--bg); }
+.quiz-option:hover { border-color: var(--primary-light); background: var(--primary-bg); }
+.quiz-option.selected { border-color: var(--primary); background: var(--primary-bg); }
+.quiz-option.correct { border-color: var(--success); background: var(--success-bg); }
+.quiz-option.wrong { border-color: var(--danger); background: var(--danger-bg); }
+.quiz-result { margin-top: 16px; padding: 16px; border-radius: 10px; font-size: 14px; line-height: 1.6; }
+.quiz-result.correct-result { background: var(--success-bg); border: 1px solid #BBF7D0; }
+.quiz-result.wrong-result { background: var(--danger-bg); border: 1px solid #FECACA; }
+.quiz-next { margin-top: 16px; width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: 600; }
+.quiz-next:hover { background: var(--primary-light); }
+.quiz-progress { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+
+/* 知识点浏览 */
+.knowledge-list { display: flex; flex-direction: column; gap: 12px; }
+.knowledge-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; cursor: pointer; transition: all 0.2s; border-left: 4px solid var(--border); }
+.knowledge-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.knowledge-card.imp-3 { border-left-color: var(--danger); }
+.knowledge-card.imp-2 { border-left-color: var(--warning); }
+.knowledge-card.imp-1 { border-left-color: var(--primary); }
+.knowledge-card .kn-chapter { font-size: 12px; color: var(--text2); }
+.knowledge-card .kn-title { font-size: 15px; font-weight: 600; margin: 4px 0; }
+.knowledge-card .kn-content { font-size: 13px; color: var(--text2); line-height: 1.6; margin-top: 8px; display: none; }
+.knowledge-card.expanded .kn-content { display: block; }
+.knowledge-card .kn-tags { display: flex; gap: 6px; margin-top: 6px; }
+.knowledge-card .kn-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+.kn-tag.number { background: var(--primary-bg); color: #3730A3; }
+.kn-tag.confusing { background: #FEF3C7; color: #92400E; }
+
+/* 筛选 */
+.filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-btn { padding: 6px 14px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); border-radius: 8px; cursor: pointer; font-size: 13px; }
+.filter-btn:hover { border-color: var(--primary-light); color: var(--primary); }
+.filter-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+
+/* 进度条 */
+.progress-bar { width: 100%; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.progress-fill.green { background: var(--success); }
+.progress-fill.yellow { background: var(--warning); }
+.progress-fill.red { background: var(--danger); }
+
+/* Markdown 渲染 */
+.md-content strong, .md-content b { font-weight: 700; color: var(--text); }
+.md-content table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px; }
+.md-content th, .md-content td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+.md-content th { background: var(--bg3); font-weight: 600; }
+.md-content ul, .md-content ol { padding-left: 20px; margin: 4px 0; }
+.md-content li { margin: 2px 0; line-height: 1.6; }
+.md-content p { margin: 4px 0; line-height: 1.6; }
+.md-content code { background: var(--bg3); padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
+
+/* 隐藏 */
+.hidden { display: none !important; }
+
+@media (max-width: 600px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .nav-title { font-size: 15px; width: 100%; margin-bottom: 8px; }
+  .card-question { font-size: 15px; }
+  .md-content table { font-size: 12px; }
+  .md-content th, .md-content td { padding: 4px 6px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- 导航 -->
+  <div class="nav">
+    <span class="nav-title">基金从业 · 复习助手</span>
+    <button class="nav-btn active" onclick="switchMode('flashcard')">闪卡</button>
+    <button class="nav-btn" onclick="switchMode('quiz')">刷题</button>
+    <button class="nav-btn" onclick="switchMode('knowledge')">知识点</button>
+    <button class="nav-btn" onclick="switchMode('mock')">模考</button>
+    <button class="nav-btn" onclick="switchMode('wrong')">错题本</button>
+    <button class="nav-btn" onclick="switchMode('stats')">进度</button>
+  </div>
+
+  <!-- 科目选择 -->
+  <div class="subject-bar">
+    <button class="subject-btn active" onclick="switchSubject('法规')">法规</button>
+    <button class="subject-btn" onclick="switchSubject('私募股权')">私募股权</button>
+    <button class="subject-btn" onclick="switchSubject('证券投资')">证券投资</button>
+  </div>
+
+  <!-- 统计 -->
+  <div class="stats" id="stats-bar">
+    <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">总题数</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-done">0</div><div class="stat-label">已做</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-correct">0</div><div class="stat-label">正确率</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-points">0</div><div class="stat-label">知识点</div></div>
+  </div>
+
+  <!-- 闪卡模式 -->
+  <div id="mode-flashcard">
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFlashType('knowledge')">知识点</button>
+      <button class="filter-btn" onclick="setFlashType('question')">题目</button>
+      <button class="filter-btn" onclick="setFlashFilter('all')">全部</button>
+      <button class="filter-btn" onclick="setFlashFilter('3')">必考</button>
+      <button class="filter-btn" onclick="setFlashFilter('number')">数字</button>
+      <button class="filter-btn" onclick="setFlashFilter('confusing')">易混</button>
+    </div>
+    <div class="card-nav">
+      <button class="card-nav-btn" onclick="prevCard()">&larr;</button>
+      <span class="card-counter" id="card-counter">1 / 0</span>
+      <button class="card-nav-btn" onclick="nextCard()">&rarr;</button>
+    </div>
+    <div class="flashcard-container" onclick="flipCard()">
+      <div class="flashcard" id="flashcard">
+        <div class="card-face card-front" id="card-front"></div>
+        <div class="card-face card-back" id="card-back"></div>
+      </div>
+    </div>
+    <div class="card-actions">
+      <button class="card-btn btn-wrong" onclick="rateCard(0)">不会</button>
+      <button class="card-btn btn-maybe" onclick="rateCard(1)">模糊</button>
+      <button class="card-btn btn-right" onclick="rateCard(2)">记住了</button>
+    </div>
+  </div>
+
+  <!-- 刷题模式 -->
+  <div id="mode-quiz" class="hidden">
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setQuizSource('all')">全部</button>
+      <button class="filter-btn" onclick="setQuizSource('wrong')">错题</button>
+      <button class="filter-btn" onclick="setQuizSource('unseen')">未做</button>
+    </div>
+    <div id="quiz-area"></div>
+  </div>
+
+  <!-- 知识点模式 -->
+  <div id="mode-knowledge" class="hidden">
+    <div class="filter-bar" id="chapter-filter"></div>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setKnFilter('all')">全部</button>
+      <button class="filter-btn" onclick="setKnFilter('3')">必考</button>
+      <button class="filter-btn" onclick="setKnFilter('2')">高频</button>
+      <button class="filter-btn" onclick="setKnFilter('number')">数字</button>
+      <button class="filter-btn" onclick="setKnFilter('confusing')">易混</button>
+    </div>
+    <div class="knowledge-list" id="knowledge-list"></div>
+  </div>
+
+  <!-- 模考模式 -->
+  <div id="mode-mock" class="hidden">
+    <div id="mock-select">
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="setMockType('all')">全部</button>
+        <button class="filter-btn" onclick="setMockType('真题')">真题</button>
+        <button class="filter-btn" onclick="setMockType('预测卷')">预测卷</button>
+        <button class="filter-btn" onclick="setMockType('点题卷')">点题卷</button>
+      </div>
+      <div id="mock-list" class="knowledge-list"></div>
+    </div>
+    <div id="mock-exam" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 18px;">
+        <div>
+          <div style="font-size:15px;font-weight:600" id="mock-title"></div>
+          <div style="font-size:13px;color:var(--text2)" id="mock-progress-text"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="font-size:20px;font-weight:700;color:var(--primary)" id="mock-timer">120:00</div>
+          <button onclick="finishMockExam()" style="padding:8px 16px;background:var(--danger);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">交卷</button>
+        </div>
+      </div>
+      <div class="progress-bar" style="margin-bottom:16px"><div class="progress-fill green" id="mock-progress-bar" style="width:0%"></div></div>
+      <div id="mock-question-area"></div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button onclick="mockPrev()" style="flex:1;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:14px;color:var(--text2)">上一题</button>
+        <button onclick="mockNext()" style="flex:1;padding:12px;background:var(--primary);border:none;border-radius:10px;cursor:pointer;font-size:14px;color:white;font-weight:600">下一题</button>
+      </div>
+      <div style="margin-top:16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:8px">答题卡 (点击跳转)</div>
+        <div id="mock-answer-sheet" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+      </div>
+    </div>
+    <div id="mock-result" class="hidden">
+      <div id="mock-result-content"></div>
+    </div>
+  </div>
+
+  <!-- 错题本模式 -->
+  <div id="mode-wrong" class="hidden">
+    <div id="wrong-stats" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:16px;font-weight:600">错题本</div>
+        <div style="font-size:13px;color:var(--text2)" id="wrong-count-text"></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill green" id="wrong-progress-bar" style="width:0%"></div></div>
+      <div style="font-size:12px;color:var(--text2);margin-top:4px" id="wrong-progress-text"></div>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setWrongSource('all')">全部错题</button>
+      <button class="filter-btn" onclick="setWrongSource('quiz')">刷题错题</button>
+      <button class="filter-btn" onclick="setWrongSource('mock')">模考错题</button>
+      <button class="filter-btn" onclick="clearWrongQuestions()" style="margin-left:auto;color:var(--danger);border-color:#FECACA">清空</button>
+    </div>
+    <div id="wrong-area"></div>
+  </div>
+
+  <!-- 进度模式 -->
+  <div id="mode-stats" class="hidden">
+    <div id="stats-detail"></div>
+  </div>
+</div>
+
+<script>
+let questions = {}, knowledge = {}, mockExams = {};
+let currentSubject = '法规', currentMode = 'flashcard';
+let flashType = 'knowledge', flashFilter = 'all';
+let quizSource = 'all', knFilter = 'all', knChapter = 'all';
+let flashDeck = [], flashIndex = 0;
+let currentQuiz = null, quizAnswered = false;
+let mockType = 'all';
+let mockState = null; // {paper, index, answers:{}, timer, startTime}
+let wrongSource = 'all';
+let wrongQuiz = null, wrongAnswered = false;
+
+// ========== Markdown 渲染 ==========
+function renderMarkdown(text) {
+  if (!text) return '';
+  let html = text;
+
+  // 处理表格
+  const tableRegex = /(\|.+\|[\r\n]+\|[-|\s:]+\|[\r\n]+((\|.+\|[\r\n]*)+))/g;
+  html = html.replace(tableRegex, function(match) {
+    const rows = match.trim().split('\n').filter(r => r.trim());
+    if (rows.length < 2) return match;
+    let table = '<table>';
+    // header
+    const headers = rows[0].split('|').filter(c => c.trim());
+    table += '<tr>' + headers.map(h => '<th>' + h.trim() + '</th>').join('') + '</tr>';
+    // skip separator row (row[1])
+    for (let i = 2; i < rows.length; i++) {
+      const cells = rows[i].split('|').filter(c => c.trim() !== '' || c.includes(' '));
+      const cleanCells = rows[i].split('|').slice(1, -1);
+      if (cleanCells.length > 0) {
+        table += '<tr>' + cleanCells.map(c => '<td>' + c.trim() + '</td>').join('') + '</tr>';
+      }
+    }
+    table += '</table>';
+    return table;
+  });
+
+  // 处理列表（- 开头）
+  html = html.replace(/^(- .+(\n|$))+/gm, function(match) {
+    const items = match.trim().split('\n').filter(l => l.trim());
+    return '<ul>' + items.map(l => '<li>' + l.replace(/^-\s*/, '') + '</li>').join('') + '</ul>';
+  });
+
+  // 处理有序列表（1. 开头）
+  html = html.replace(/^(\d+\. .+(\n|$))+/gm, function(match) {
+    const items = match.trim().split('\n').filter(l => l.trim());
+    return '<ol>' + items.map(l => '<li>' + l.replace(/^\d+\.\s*/, '') + '</li>').join('') + '</ol>';
+  });
+
+  // 处理粗体 **text**
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // 处理行内代码
+  html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+
+  // 换行
+  html = html.replace(/\n/g, '<br>');
+
+  // 清理多余 br
+  html = html.replace(/<br>\s*(<\/?(?:ul|ol|li|table|tr|td|th|p))/g, '$1');
+  html = html.replace(/(<\/(?:ul|ol|table|p)>)\s*<br>/g, '$1');
+
+  return html;
+}
+
+// 进度存储
+function getProgress() {
+  return JSON.parse(localStorage.getItem('fund_exam_progress') || '{}');
+}
+function saveProgress(p) {
+  localStorage.setItem('fund_exam_progress', JSON.stringify(p));
+}
+
+// 加载数据
+async function loadData() {
+  const [qResp, kResp, mResp] = await Promise.all([
+    fetch('questions.json'), fetch('knowledge.json'), fetch('mock_exams.json')
+  ]);
+  questions = await qResp.json();
+  knowledge = await kResp.json();
+  mockExams = await mResp.json();
+  updateAll();
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.nav-btn').forEach((b, i) => b.classList.toggle('active', ['flashcard','quiz','knowledge','mock','wrong','stats'][i] === mode));
+  ['flashcard','quiz','knowledge','mock','wrong','stats'].forEach(m => document.getElementById('mode-'+m).classList.toggle('hidden', m !== mode));
+  updateAll();
+}
+
+function switchSubject(s) {
+  currentSubject = s;
+  document.querySelectorAll('.subject-btn').forEach(b => b.classList.toggle('active', b.textContent === s));
+  updateAll();
+}
+
+function updateAll() {
+  updateStats();
+  if (currentMode === 'flashcard') buildFlashDeck();
+  if (currentMode === 'quiz') showQuiz();
+  if (currentMode === 'knowledge') showKnowledge();
+  if (currentMode === 'mock') showMockList();
+  if (currentMode === 'wrong') showWrongQuestions();
+  if (currentMode === 'stats') showStatsDetail();
+}
+
+function updateStats() {
+  const qs = questions[currentSubject] || [];
+  const kn = knowledge[currentSubject] || [];
+  const p = getProgress();
+  const subj = p[currentSubject] || {};
+  const done = Object.keys(subj.quiz || {}).length;
+  const correct = Object.values(subj.quiz || {}).filter(v => v === true).length;
+  document.getElementById('stat-total').textContent = qs.length;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-correct').textContent = done > 0 ? Math.round(correct/done*100)+'%' : '-';
+  document.getElementById('stat-points').textContent = kn.length;
+}
+
+// ========== 闪卡 ==========
+function setFlashType(t) {
+  flashType = t;
+  document.querySelectorAll('#mode-flashcard .filter-bar:first-child .filter-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.includes(t==='knowledge'?'知识点':'题目'));
+  });
+  buildFlashDeck();
+}
+function setFlashFilter(f) {
+  flashFilter = f;
+  buildFlashDeck();
+}
+
+function buildFlashDeck() {
+  const p = getProgress();
+  const subj = p[currentSubject] || {};
+  const cardState = subj.cards || {};
+  
+  if (flashType === 'knowledge') {
+    let items = (knowledge[currentSubject] || []).map((k,i) => ({...k, _id: 'kn_'+i}));
+    if (flashFilter === '3') items = items.filter(k => k.importance === 3);
+    if (flashFilter === 'number') items = items.filter(k => k.is_number);
+    if (flashFilter === 'confusing') items = items.filter(k => k.is_confusing);
+    items.sort((a,b) => (cardState[a._id]||0) - (cardState[b._id]||0));
+    flashDeck = items;
+  } else {
+    let items = (questions[currentSubject] || []).filter(q => q.answer).map((q,i) => ({...q, _id: 'q_'+q.id}));
+    if (flashFilter === '3') items = items.slice(0, Math.min(100, items.length));
+    flashDeck = items.sort(() => Math.random() - 0.5);
+  }
+  flashIndex = 0;
+  showFlashcard();
+}
+
+function showFlashcard() {
+  const counter = document.getElementById('card-counter');
+  if (flashDeck.length === 0) {
+    document.getElementById('card-front').innerHTML = '<div style="text-align:center;font-size:16px;color:var(--text2)">没有匹配的卡片</div>';
+    document.getElementById('card-back').innerHTML = '';
+    counter.textContent = '0 / 0';
+    return;
+  }
+  const idx = flashIndex % flashDeck.length;
+  const card = flashDeck[idx];
+  const fc = document.getElementById('flashcard');
+  fc.classList.remove('flipped');
+  
+  counter.textContent = (idx + 1) + ' / ' + flashDeck.length;
+  
+  const front = document.getElementById('card-front');
+  const back = document.getElementById('card-back');
+  
+  if (flashType === 'knowledge') {
+    const impLabel = ['', '常考', '高频', '必考'][card.importance] || '';
+    const impClass = 'imp-' + card.importance;
+    let tags = '';
+    if (card.is_number) tags += '<span class="kn-tag number">数字考点</span>';
+    if (card.is_confusing) tags += '<span class="kn-tag confusing">易混淆</span>';
+    
+    front.innerHTML = `
+      <span class="card-importance ${impClass}">${impLabel}</span>
+      <div class="card-question">${card.title || card.section || ''}</div>
+      <div style="font-size:13px;color:var(--text2)">${card.chapter || ''}</div>
+      <div style="margin-top:8px">${tags}</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:auto">点击翻转查看</div>
+    `;
+    back.innerHTML = `
+      <div class="card-answer md-content">${renderMarkdown(card.content||'')}</div>
+    `;
+  } else {
+    front.innerHTML = `
+      <div class="card-question">${renderMarkdown(card.stem||'')}</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.7">
+        A. ${card.options?.A||''}<br>B. ${card.options?.B||''}<br>C. ${card.options?.C||''}<br>D. ${card.options?.D||''}
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-top:auto">点击翻转查看答案</div>
+    `;
+    back.innerHTML = `
+      <div class="card-answer"><span class="correct">答案：${card.answer}</span></div>
+      ${card.analysis ? '<div class="card-analysis md-content">'+renderMarkdown(card.analysis)+'</div>' : ''}
+    `;
+  }
+}
+
+function flipCard() {
+  document.getElementById('flashcard').classList.toggle('flipped');
+}
+
+function prevCard() {
+  if (flashDeck.length === 0) return;
+  flashIndex = (flashIndex - 1 + flashDeck.length) % flashDeck.length;
+  showFlashcard();
+}
+
+function nextCard() {
+  if (flashDeck.length === 0) return;
+  flashIndex = (flashIndex + 1) % flashDeck.length;
+  showFlashcard();
+}
+
+function rateCard(rating) {
+  if (flashDeck.length === 0) return;
+  const card = flashDeck[flashIndex % flashDeck.length];
+  const p = getProgress();
+  if (!p[currentSubject]) p[currentSubject] = {};
+  if (!p[currentSubject].cards) p[currentSubject].cards = {};
+  p[currentSubject].cards[card._id] = rating;
+  saveProgress(p);
+  
+  if (rating === 0) {
+    flashDeck.push(card);
+  }
+  flashIndex++;
+  showFlashcard();
+  updateStats();
+}
+
+// 键盘快捷键
+document.addEventListener('keydown', function(e) {
+  if (currentMode !== 'flashcard') return;
+  if (e.key === 'ArrowLeft') prevCard();
+  if (e.key === 'ArrowRight') nextCard();
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flipCard(); }
+  if (e.key === '1') rateCard(0);
+  if (e.key === '2') rateCard(1);
+  if (e.key === '3') rateCard(2);
+});
+
+// 触摸滑动
+let touchStartX = 0;
+document.addEventListener('touchstart', function(e) {
+  touchStartX = e.touches[0].clientX;
+}, {passive: true});
+document.addEventListener('touchend', function(e) {
+  if (currentMode !== 'flashcard') return;
+  const diff = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(diff) > 60) {
+    if (diff > 0) prevCard();
+    else nextCard();
+  }
+}, {passive: true});
+
+// ========== 刷题 ==========
+function setQuizSource(s) {
+  quizSource = s;
+  document.querySelectorAll('#mode-quiz .filter-bar .filter-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.includes(s==='all'?'全部':s==='wrong'?'错题':'未做'));
+  });
+  showQuiz();
+}
+
+function showQuiz() {
+  const p = getProgress();
+  const subj = p[currentSubject] || {};
+  const quizState = subj.quiz || {};
+  
+  let pool = (questions[currentSubject] || []).filter(q => q.answer);
+  if (quizSource === 'wrong') pool = pool.filter(q => quizState[q.id] === false);
+  if (quizSource === 'unseen') pool = pool.filter(q => quizState[q.id] === undefined);
+  
+  if (pool.length === 0) {
+    document.getElementById('quiz-area').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">没有匹配的题目</div>';
+    return;
+  }
+  
+  currentQuiz = pool[Math.floor(Math.random() * pool.length)];
+  quizAnswered = false;
+  
+  const totalDone = Object.keys(quizState).length;
+  const totalCorrect = Object.values(quizState).filter(v=>v===true).length;
+  
+  let html = `<div class="quiz-progress">已做 ${totalDone} 题 · 正确 ${totalCorrect} 题 · 剩余 ${pool.length} 题</div>`;
+  html += `<div class="quiz-question"><div class="quiz-stem md-content">${renderMarkdown(currentQuiz.stem)}</div><div class="quiz-options">`;
+  for (const key of ['A','B','C','D']) {
+    if (currentQuiz.options?.[key]) {
+      html += `<div class="quiz-option" data-key="${key}" onclick="selectOption('${key}')">${key}. ${currentQuiz.options[key]}</div>`;
+    }
+  }
+  html += '</div><div id="quiz-feedback"></div></div>';
+  document.getElementById('quiz-area').innerHTML = html;
+}
+
+function selectOption(key) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  
+  const correct = currentQuiz.answer;
+  const isCorrect = key === correct;
+  
+  const p = getProgress();
+  if (!p[currentSubject]) p[currentSubject] = {};
+  if (!p[currentSubject].quiz) p[currentSubject].quiz = {};
+  p[currentSubject].quiz[currentQuiz.id] = isCorrect;
+  saveProgress(p);
+  
+  document.querySelectorAll('.quiz-option').forEach(el => {
+    if (el.dataset.key === correct) el.classList.add('correct');
+    if (el.dataset.key === key && !isCorrect) el.classList.add('wrong');
+  });
+  
+  let feedback = `<div class="quiz-result ${isCorrect ? 'correct-result' : 'wrong-result'}">`;
+  feedback += isCorrect ? '正确' : `错误，正确答案是 <strong>${correct}</strong>`;
+  if (currentQuiz.analysis) feedback += `<br><br><span class="md-content">${renderMarkdown(currentQuiz.analysis)}</span>`;
+  feedback += '</div>';
+  feedback += '<button class="quiz-next" onclick="showQuiz()">下一题 →</button>';
+  document.getElementById('quiz-feedback').innerHTML = feedback;
+  updateStats();
+  
+  // 错题收集
+  if (!isCorrect) {
+    addWrongQuestion(currentQuiz, 'quiz', key);
+  } else {
+    removeWrongQuestion(currentQuiz.id || currentQuiz.stem);
+  }
+}
+
+// ========== 知识点 ==========
+function setKnFilter(f) {
+  knFilter = f;
+  showKnowledge();
+}
+
+function showKnowledge() {
+  const items = knowledge[currentSubject] || [];
+  
+  const chapters = [...new Set(items.map(k => k.chapter))];
+  let chHtml = '<button class="filter-btn '+(knChapter==='all'?'active':'')+'" onclick="knChapter=\'all\';showKnowledge()">全部章节</button>';
+  chapters.forEach(ch => {
+    const short = ch.replace(/^第.+章\s*/, '').substring(0, 6);
+    chHtml += `<button class="filter-btn ${knChapter===ch?'active':''}" onclick="knChapter='${ch}';showKnowledge()">${short}</button>`;
+  });
+  document.getElementById('chapter-filter').innerHTML = chHtml;
+  
+  let filtered = items;
+  if (knChapter !== 'all') filtered = filtered.filter(k => k.chapter === knChapter);
+  if (knFilter === '3') filtered = filtered.filter(k => k.importance === 3);
+  if (knFilter === '2') filtered = filtered.filter(k => k.importance === 2);
+  if (knFilter === 'number') filtered = filtered.filter(k => k.is_number);
+  if (knFilter === 'confusing') filtered = filtered.filter(k => k.is_confusing);
+  
+  let html = '';
+  filtered.forEach((k, i) => {
+    const impClass = 'imp-' + k.importance;
+    let tags = '';
+    if (k.is_number) tags += '<span class="kn-tag number">数字</span>';
+    if (k.is_confusing) tags += '<span class="kn-tag confusing">易混</span>';
+    const impLabel = ['','·','··','···'][k.importance];
+    
+    html += `<div class="knowledge-card ${impClass}" onclick="this.classList.toggle('expanded')">
+      <div class="kn-chapter">${k.chapter} ${impLabel}</div>
+      <div class="kn-title">${k.title || k.section || ''}</div>
+      <div class="kn-tags">${tags}</div>
+      <div class="kn-content md-content">${renderMarkdown(k.content||'')}</div>
+    </div>`;
+  });
+  
+  document.getElementById('knowledge-list').innerHTML = html || '<div style="text-align:center;padding:40px;color:var(--text2)">没有匹配的知识点</div>';
+}
+
+// ========== 进度统计 ==========
+function showStatsDetail() {
+  const p = getProgress();
+  let html = '';
+  
+  for (const subj of ['法规', '私募股权', '证券投资']) {
+    const qs = questions[subj] || [];
+    const total = qs.filter(q => q.answer).length;
+    const subjP = p[subj] || {};
+    const quiz = subjP.quiz || {};
+    const cards = subjP.cards || {};
+    
+    const done = Object.keys(quiz).length;
+    const correct = Object.values(quiz).filter(v => v === true).length;
+    const wrong = Object.values(quiz).filter(v => v === false).length;
+    const pct = done > 0 ? Math.round(correct/done*100) : 0;
+    
+    const cardsDone = Object.keys(cards).length;
+    const cardsKnow = Object.values(cards).filter(v => v === 2).length;
+    const cardsFuzzy = Object.values(cards).filter(v => v === 1).length;
+    const cardsWrong = Object.values(cards).filter(v => v === 0).length;
+    
+    html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px">
+      <h3 style="margin-bottom:12px;font-size:16px">${subj}</h3>
+      <div style="margin-bottom:12px">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:4px">刷题进度 ${done}/${total}</div>
+        <div class="progress-bar"><div class="progress-fill green" style="width:${total>0?done/total*100:0}%"></div></div>
+        <div style="font-size:13px;color:var(--text2)">正确 ${correct} · 错误 ${wrong} · 正确率 ${pct}%</div>
+      </div>
+      <div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:4px">闪卡进度 ${cardsDone} 张</div>
+        <div style="font-size:13px;color:var(--text2)">记住 ${cardsKnow} · 模糊 ${cardsFuzzy} · 不会 ${cardsWrong}</div>
+      </div>
+    </div>`;
+  }
+  
+  html += `<button onclick="if(confirm('确定清除所有进度？')){localStorage.removeItem('fund_exam_progress');updateAll()}" style="width:100%;padding:12px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:10px;cursor:pointer;font-size:14px">清除所有进度</button>`;
+  
+  document.getElementById('stats-detail').innerHTML = html;
+}
+
+// ========== 模考 ==========
+function setMockType(t) {
+  mockType = t;
+  document.querySelectorAll('#mode-mock .filter-bar .filter-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.includes(t==='all'?'全部':t));
+  });
+  showMockList();
+}
+
+function showMockList() {
+  if (mockState && mockState.timer) return; // exam in progress
+  document.getElementById('mock-select').classList.remove('hidden');
+  document.getElementById('mock-exam').classList.add('hidden');
+  document.getElementById('mock-result').classList.add('hidden');
+  
+  const papers = mockExams[currentSubject] || [];
+  let filtered = mockType === 'all' ? papers : papers.filter(p => p.type === mockType);
+  
+  const p = getProgress();
+  const mockHistory = (p[currentSubject] || {}).mock || {};
+  
+  let html = '';
+  filtered.forEach((paper, i) => {
+    const history = mockHistory[paper.name];
+    let badge = '';
+    if (history) {
+      badge = `<span style="font-size:12px;padding:2px 8px;border-radius:4px;background:var(--success-bg);color:var(--success)">${history.score}分</span>`;
+    }
+    const typeColor = paper.type === '真题' ? 'var(--danger)' : paper.type === '预测卷' ? 'var(--primary)' : 'var(--warning)';
+    
+    html += `<div class="knowledge-card" style="border-left-color:${typeColor}" onclick="startMockExam(${i})">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="kn-chapter">${paper.type} · ${paper.year || ''} · ${paper.question_count}题</div>
+          <div class="kn-title">${paper.name}</div>
+        </div>
+        <div>${badge}</div>
+      </div>
+    </div>`;
+  });
+  
+  document.getElementById('mock-list').innerHTML = html || '<div style="text-align:center;padding:40px;color:var(--text2)">没有匹配的试卷</div>';
+}
+
+function startMockExam(idx) {
+  const papers = mockExams[currentSubject] || [];
+  let filtered = mockType === 'all' ? papers : papers.filter(p => p.type === mockType);
+  const paper = filtered[idx];
+  if (!paper) return;
+  
+  mockState = {
+    paper: paper,
+    index: 0,
+    answers: {},
+    startTime: Date.now(),
+    timer: null,
+    finished: false
+  };
+  
+  document.getElementById('mock-select').classList.add('hidden');
+  document.getElementById('mock-exam').classList.remove('hidden');
+  document.getElementById('mock-result').classList.add('hidden');
+  document.getElementById('mock-title').textContent = paper.name;
+  
+  // Start timer (120 min)
+  mockState.timer = setInterval(updateMockTimer, 1000);
+  updateMockTimer();
+  renderMockQuestion();
+  renderAnswerSheet();
+}
+
+function updateMockTimer() {
+  if (!mockState) return;
+  const elapsed = Math.floor((Date.now() - mockState.startTime) / 1000);
+  const total = 120 * 60; // 120 minutes
+  const remaining = Math.max(0, total - elapsed);
+  const min = Math.floor(remaining / 60);
+  const sec = remaining % 60;
+  document.getElementById('mock-timer').textContent = `${min}:${sec.toString().padStart(2,'0')}`;
+  
+  if (remaining <= 0) {
+    finishMockExam();
+  }
+  
+  // Color warning
+  const el = document.getElementById('mock-timer');
+  if (remaining < 600) el.style.color = 'var(--danger)';
+  else if (remaining < 1800) el.style.color = 'var(--warning)';
+  else el.style.color = 'var(--primary)';
+}
+
+function renderMockQuestion() {
+  if (!mockState) return;
+  const q = mockState.paper.questions[mockState.index];
+  const total = mockState.paper.questions.length;
+  const answered = Object.keys(mockState.answers).length;
+  
+  document.getElementById('mock-progress-text').textContent = `第 ${mockState.index+1}/${total} 题 · 已答 ${answered}/${total}`;
+  document.getElementById('mock-progress-bar').style.width = `${answered/total*100}%`;
+  
+  const selected = mockState.answers[mockState.index] || '';
+  
+  let html = `<div class="quiz-question"><div class="quiz-stem md-content">${renderMarkdown(q.stem)}</div><div class="quiz-options">`;
+  for (const key of ['A','B','C','D']) {
+    if (q.options?.[key]) {
+      const cls = selected === key ? 'selected' : '';
+      html += `<div class="quiz-option ${cls}" data-key="${key}" onclick="mockSelectOption('${key}')">${key}. ${q.options[key]}</div>`;
+    }
+  }
+  html += '</div></div>';
+  document.getElementById('mock-question-area').innerHTML = html;
+}
+
+function mockSelectOption(key) {
+  if (!mockState || mockState.finished) return;
+  mockState.answers[mockState.index] = key;
+  renderMockQuestion();
+  renderAnswerSheet();
+}
+
+function mockPrev() {
+  if (!mockState || mockState.index <= 0) return;
+  mockState.index--;
+  renderMockQuestion();
+}
+
+function mockNext() {
+  if (!mockState) return;
+  if (mockState.index < mockState.paper.questions.length - 1) {
+    mockState.index++;
+    renderMockQuestion();
+  }
+}
+
+function mockJumpTo(idx) {
+  if (!mockState) return;
+  mockState.index = idx;
+  renderMockQuestion();
+}
+
+function renderAnswerSheet() {
+  if (!mockState) return;
+  const total = mockState.paper.questions.length;
+  let html = '';
+  for (let i = 0; i < total; i++) {
+    const answered = mockState.answers[i] ? 'background:var(--primary);color:white;border-color:var(--primary)' : '';
+    const current = i === mockState.index ? 'outline:2px solid var(--primary);outline-offset:1px' : '';
+    html += `<div onclick="mockJumpTo(${i})" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer;${answered};${current}">${i+1}</div>`;
+  }
+  document.getElementById('mock-answer-sheet').innerHTML = html;
+}
+
+function finishMockExam() {
+  if (!mockState || mockState.finished) return;
+  
+  const unanswered = mockState.paper.questions.length - Object.keys(mockState.answers).length;
+  if (unanswered > 0 && !confirm(`还有 ${unanswered} 题未作答，确定交卷？`)) return;
+  
+  mockState.finished = true;
+  if (mockState.timer) {
+    clearInterval(mockState.timer);
+    mockState.timer = null;
+  }
+  
+  // Calculate score
+  let correct = 0, wrong = 0;
+  const qs = mockState.paper.questions;
+  const wrongList = [];
+  
+  for (let i = 0; i < qs.length; i++) {
+    const userAns = mockState.answers[i];
+    if (userAns === qs[i].answer) {
+      correct++;
+    } else {
+      wrong++;
+      if (userAns) wrongList.push(i);
+    }
+  }
+  
+  const total = qs.length;
+  const score = Math.round(correct / total * 100);
+  const elapsed = Math.floor((Date.now() - mockState.startTime) / 1000);
+  const usedMin = Math.floor(elapsed / 60);
+  const usedSec = elapsed % 60;
+  
+  // Save result
+  const p = getProgress();
+  if (!p[currentSubject]) p[currentSubject] = {};
+  if (!p[currentSubject].mock) p[currentSubject].mock = {};
+  p[currentSubject].mock[mockState.paper.name] = {
+    score: score,
+    correct: correct,
+    total: total,
+    time: `${usedMin}分${usedSec}秒`,
+    date: new Date().toLocaleDateString()
+  };
+  saveProgress(p);
+  
+  // 模考错题收集
+  for (let i = 0; i < qs.length; i++) {
+    const userAns = mockState.answers[i];
+    if (userAns && userAns !== qs[i].answer) {
+      addWrongQuestion(qs[i], 'mock', userAns);
+    }
+  }
+  
+  // Show result
+  document.getElementById('mock-exam').classList.add('hidden');
+  document.getElementById('mock-result').classList.remove('hidden');
+  
+  const passed = score >= 60;
+  let html = `
+    <div style="text-align:center;padding:30px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;margin-bottom:16px">
+      <div style="font-size:48px;font-weight:700;color:${passed?'var(--success)':'var(--danger)'}">${score}</div>
+      <div style="font-size:14px;color:var(--text2);margin-top:4px">${passed?'通过':'未通过'} (60分及格)</div>
+      <div style="margin-top:12px;font-size:13px;color:var(--text2)">
+        正确 ${correct} · 错误 ${wrong} · 未答 ${total-correct-wrong} · 用时 ${usedMin}分${usedSec}秒
+      </div>
+    </div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:12px">错题回顾</div>
+  `;
+  
+  // Show wrong answers (first 20)
+  const showWrong = wrongList.slice(0, 20);
+  showWrong.forEach(i => {
+    const q = qs[i];
+    const userAns = mockState.answers[i] || '未答';
+    html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px">
+      <div style="font-size:14px;line-height:1.6;margin-bottom:8px" class="md-content">${renderMarkdown(q.stem)}</div>
+      <div style="font-size:13px;color:var(--danger)">你的答案: ${userAns}</div>
+      <div style="font-size:13px;color:var(--success)">正确答案: ${q.answer}</div>
+      ${q.analysis ? '<div style="font-size:13px;color:var(--text2);margin-top:6px;border-top:1px solid var(--border);padding-top:6px" class="md-content">'+renderMarkdown(q.analysis)+'</div>' : ''}
+    </div>`;
+  });
+  if (wrongList.length > 20) {
+    html += `<div style="text-align:center;color:var(--text2);font-size:13px">还有 ${wrongList.length-20} 道错题未显示</div>`;
+  }
+  
+  html += `<button onclick="mockState=null;showMockList()" style="width:100%;padding:14px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:15px;cursor:pointer;font-weight:600;margin-top:16px">返回试卷列表</button>`;
+  
+  document.getElementById('mock-result-content').innerHTML = html;
+}
+
+// ========== 错题本 ==========
+function getWrongBook() {
+  return JSON.parse(localStorage.getItem('fund_wrong_book') || '{}');
+}
+function saveWrongBook(wb) {
+  localStorage.setItem('fund_wrong_book', JSON.stringify(wb));
+}
+
+function addWrongQuestion(q, source, userAnswer) {
+  const wb = getWrongBook();
+  if (!wb[currentSubject]) wb[currentSubject] = {};
+  const key = q.id ? ('q_' + q.id) : ('stem_' + q.stem.substring(0, 50));
+  
+  wb[currentSubject][key] = {
+    stem: q.stem,
+    options: q.options,
+    answer: q.answer,
+    analysis: q.analysis || '',
+    source: source, // 'quiz' or 'mock'
+    userAnswer: userAnswer,
+    wrongCount: (wb[currentSubject][key]?.wrongCount || 0) + 1,
+    lastWrong: new Date().toISOString(),
+    correctStreak: 0
+  };
+  saveWrongBook(wb);
+}
+
+function removeWrongQuestion(qId) {
+  const wb = getWrongBook();
+  if (!wb[currentSubject]) return;
+  const key = typeof qId === 'number' ? ('q_' + qId) : ('stem_' + String(qId).substring(0, 50));
+  
+  // Instead of removing immediately, increase correctStreak
+  if (wb[currentSubject][key]) {
+    wb[currentSubject][key].correctStreak = (wb[currentSubject][key].correctStreak || 0) + 1;
+    // Remove after 2 consecutive correct answers
+    if (wb[currentSubject][key].correctStreak >= 2) {
+      delete wb[currentSubject][key];
+    }
+    saveWrongBook(wb);
+  }
+}
+
+function setWrongSource(s) {
+  wrongSource = s;
+  document.querySelectorAll('#mode-wrong .filter-bar .filter-btn:not(:last-child)').forEach(b => {
+    b.classList.toggle('active', b.textContent.includes(s==='all'?'全部':s==='quiz'?'刷题':'模考'));
+  });
+  showWrongQuestions();
+}
+
+function showWrongQuestions() {
+  const wb = getWrongBook();
+  const items = wb[currentSubject] || {};
+  
+  let wrongList = Object.entries(items);
+  if (wrongSource === 'quiz') wrongList = wrongList.filter(([k,v]) => v.source === 'quiz');
+  if (wrongSource === 'mock') wrongList = wrongList.filter(([k,v]) => v.source === 'mock');
+  
+  // Sort: most wrong first, then most recent
+  wrongList.sort((a, b) => {
+    if (b[1].wrongCount !== a[1].wrongCount) return b[1].wrongCount - a[1].wrongCount;
+    return new Date(b[1].lastWrong) - new Date(a[1].lastWrong);
+  });
+  
+  const totalWrong = Object.keys(items).length;
+  const masteredCount = Object.values(items).filter(v => v.correctStreak >= 1).length;
+  
+  document.getElementById('wrong-count-text').textContent = `${wrongList.length} 道错题`;
+  document.getElementById('wrong-progress-bar').style.width = totalWrong > 0 ? `${masteredCount/totalWrong*100}%` : '0%';
+  document.getElementById('wrong-progress-text').textContent = totalWrong > 0 ? 
+    `已掌握 ${masteredCount} / ${totalWrong} (连对2次自动移出)` : '做题后错题会自动收集到这里';
+  
+  if (wrongList.length === 0) {
+    document.getElementById('wrong-area').innerHTML = `<div style="text-align:center;padding:40px;color:var(--text2)">${totalWrong===0?'还没有错题，去刷题或模考吧':'当前筛选无错题'}</div>`;
+    return;
+  }
+  
+  // Show practice button + list
+  let html = `<button onclick="startWrongPractice()" style="width:100%;padding:14px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:15px;cursor:pointer;font-weight:600;margin-bottom:16px">开始练习 (${wrongList.length} 题)</button>`;
+  html += '<div id="wrong-practice-area"></div>';
+  
+  // Show wrong question list
+  html += '<div style="margin-top:8px">';
+  wrongList.forEach(([key, q]) => {
+    const streakDots = '●'.repeat(q.correctStreak) + '○'.repeat(2 - q.correctStreak);
+    html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="font-size:13px;color:var(--text2)">${q.source==='mock'?'模考':'刷题'} · 错 ${q.wrongCount} 次</div>
+        <div style="font-size:12px;color:var(--text2)">${streakDots}</div>
+      </div>
+      <div style="font-size:14px;line-height:1.6" class="md-content">${renderMarkdown(q.stem)}</div>
+      <div style="font-size:13px;margin-top:6px;color:var(--danger)">你答: ${q.userAnswer}</div>
+      <div style="font-size:13px;color:var(--success)">正确: ${q.answer}</div>
+    </div>`;
+  });
+  html += '</div>';
+  
+  document.getElementById('wrong-area').innerHTML = html;
+}
+
+function startWrongPractice() {
+  const wb = getWrongBook();
+  const items = wb[currentSubject] || {};
+  let wrongList = Object.entries(items);
+  if (wrongSource === 'quiz') wrongList = wrongList.filter(([k,v]) => v.source === 'quiz');
+  if (wrongSource === 'mock') wrongList = wrongList.filter(([k,v]) => v.source === 'mock');
+  
+  if (wrongList.length === 0) return;
+  
+  // Shuffle and pick one
+  const [key, q] = wrongList[Math.floor(Math.random() * wrongList.length)];
+  wrongQuiz = { ...q, _key: key };
+  wrongAnswered = false;
+  
+  let html = `<div class="quiz-question">
+    <div class="quiz-progress">错题练习 · 剩余 ${wrongList.length} 题</div>
+    <div class="quiz-stem md-content">${renderMarkdown(q.stem)}</div>
+    <div class="quiz-options">`;
+  for (const k of ['A','B','C','D']) {
+    if (q.options?.[k]) {
+      html += `<div class="quiz-option" data-key="${k}" onclick="wrongSelectOption('${k}')">${k}. ${q.options[k]}</div>`;
+    }
+  }
+  html += '</div><div id="wrong-feedback"></div></div>';
+  document.getElementById('wrong-practice-area').innerHTML = html;
+  
+  // Scroll to practice area
+  document.getElementById('wrong-practice-area').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function wrongSelectOption(key) {
+  if (wrongAnswered || !wrongQuiz) return;
+  wrongAnswered = true;
+  
+  const correct = wrongQuiz.answer;
+  const isCorrect = key === correct;
+  
+  document.querySelectorAll('#wrong-practice-area .quiz-option').forEach(el => {
+    if (el.dataset.key === correct) el.classList.add('correct');
+    if (el.dataset.key === key && !isCorrect) el.classList.add('wrong');
+  });
+  
+  // Update wrong book
+  const wb = getWrongBook();
+  if (wb[currentSubject] && wb[currentSubject][wrongQuiz._key]) {
+    if (isCorrect) {
+      wb[currentSubject][wrongQuiz._key].correctStreak = (wb[currentSubject][wrongQuiz._key].correctStreak || 0) + 1;
+      if (wb[currentSubject][wrongQuiz._key].correctStreak >= 2) {
+        delete wb[currentSubject][wrongQuiz._key];
+      }
+    } else {
+      wb[currentSubject][wrongQuiz._key].wrongCount++;
+      wb[currentSubject][wrongQuiz._key].correctStreak = 0;
+      wb[currentSubject][wrongQuiz._key].userAnswer = key;
+      wb[currentSubject][wrongQuiz._key].lastWrong = new Date().toISOString();
+    }
+    saveWrongBook(wb);
+  }
+  
+  let feedback = `<div class="quiz-result ${isCorrect ? 'correct-result' : 'wrong-result'}">`;
+  if (isCorrect) {
+    const remaining = wb[currentSubject]?.[wrongQuiz._key];
+    feedback += remaining ? `正确 (再对 ${2 - remaining.correctStreak} 次移出错题本)` : '正确 — 已从错题本移出';
+  } else {
+    feedback += `还是错了，正确答案是 <strong>${correct}</strong>`;
+  }
+  if (wrongQuiz.analysis) feedback += `<br><br><span class="md-content">${renderMarkdown(wrongQuiz.analysis)}</span>`;
+  feedback += '</div>';
+  feedback += '<button class="quiz-next" onclick="startWrongPractice()">下一题 →</button>';
+  document.getElementById('wrong-feedback').innerHTML = feedback;
+  
+  // Refresh stats
+  showWrongQuestions();
+}
+
+function clearWrongQuestions() {
+  if (!confirm('确定清空当前科目的所有错题？')) return;
+  const wb = getWrongBook();
+  delete wb[currentSubject];
+  saveWrongBook(wb);
+  showWrongQuestions();
+}
+
+// 启动
+loadData();
+</script>
+</body>
+</html>
