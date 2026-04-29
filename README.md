@@ -46,7 +46,7 @@ npx serve .
 
 1. 进入仓库 Settings → Pages
 2. Source 选择 `Deploy from a branch`，Branch 选择 `main`，文件夹选 `/ (root)`
-3. 保存后访问 `https://你的用户名.github.io/fund_exam/`
+3. 保存后访问 https://hectorliuk.github.io/fund_exam/
 
 ## 数据
 

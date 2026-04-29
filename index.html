@@ -102,8 +102,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .knowledge-card.imp-1 { border-left-color: var(--primary); }
 .knowledge-card .kn-chapter { font-size: 12px; color: var(--text2); }
 .knowledge-card .kn-title { font-size: 15px; font-weight: 600; margin: 4px 0; word-break: break-word; }
-.knowledge-card .kn-content { font-size: 13px; color: var(--text2); line-height: 1.6; margin-top: 8px; display: none; }
-.knowledge-card.expanded .kn-content { display: block; }
+.knowledge-card .kn-content { font-size: 13px; color: var(--text2); line-height: 1.6; margin-top: 8px; }
 .knowledge-card .kn-tags { display: flex; gap: 6px; margin-top: 6px; }
 .knowledge-card .kn-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
 .kn-tag.number { background: var(--primary-bg); color: #3730A3; }
@@ -145,6 +144,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 </style>
 </head>
 <body>
+<div id="loading" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);z-index:9999">
+  <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:12px">数据文件中...</div>
+  <div style="font-size:14px;color:var(--text2)">文件较大，请稍候</div>
+</div>
 <div class="container">
   <!-- 导航 -->
   <div class="nav">
@@ -368,6 +371,7 @@ async function loadData() {
   questions = await qResp.json();
   knowledge = await kResp.json();
   mockExams = await mResp.json();
+  document.getElementById('loading').style.display = 'none';
   updateAll();
 }
 
@@ -672,7 +676,7 @@ function showKnowledge() {
     if (k.is_confusing) tags += '<span class="kn-tag confusing">易混</span>';
     const impLabel = ['','·','··','···'][k.importance];
     
-    html += `<div class="knowledge-card ${impClass}" onclick="this.classList.toggle('expanded')">
+    html += `<div class="knowledge-card ${impClass}">
       <div class="kn-chapter">${k.chapter} ${impLabel}</div>
       <div class="kn-title">${k.title || k.section || ''}</div>
       <div class="kn-tags">${tags}</div>
@@ -687,40 +691,58 @@ function showKnowledge() {
 function showStatsDetail() {
   const p = getProgress();
   let html = '';
-  
+
   for (const subj of ['法规', '私募股权', '证券投资']) {
     const qs = questions[subj] || [];
     const total = qs.filter(q => q.answer).length;
     const subjP = p[subj] || {};
     const quiz = subjP.quiz || {};
     const cards = subjP.cards || {};
-    
+
     const done = Object.keys(quiz).length;
     const correct = Object.values(quiz).filter(v => v === true).length;
     const wrong = Object.values(quiz).filter(v => v === false).length;
     const pct = done > 0 ? Math.round(correct/done*100) : 0;
-    
+
     const cardsDone = Object.keys(cards).length;
     const cardsKnow = Object.values(cards).filter(v => v === 2).length;
     const cardsFuzzy = Object.values(cards).filter(v => v === 1).length;
     const cardsWrong = Object.values(cards).filter(v => v === 0).length;
-    
+
     html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px">
-      <h3 style="margin-bottom:12px;font-size:16px">${subj}</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="font-size:16px;font-weight:600;margin:0">${subj}</h3>
+        <button onclick="showCardsEdit('${subj}')" style="padding:6px 12px;background:var(--primary);color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px">编辑</button>
+      </div>
       <div style="margin-bottom:12px">
         <div style="font-size:13px;color:var(--text2);margin-bottom:4px">刷题进度 ${done}/${total}</div>
         <div class="progress-bar"><div class="progress-fill green" style="width:${total>0?done/total*100:0}%"></div></div>
         <div style="font-size:13px;color:var(--text2)">正确 ${correct} · 错误 ${wrong} · 正确率 ${pct}%</div>
       </div>
       <div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:4px">闪卡进度 ${cardsDone} 张</div>
-        <div style="font-size:13px;color:var(--text2)">记住 ${cardsKnow} · 模糊 ${cardsFuzzy} · 不会 ${cardsWrong}</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:8px">闪卡进度 ${cardsDone} 张</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <div style="flex:1;background:var(--success-bg);border:1px solid #BBF7D0;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:20px;font-weight:700;color:var(--success)">${cardsKnow}</div>
+            <div style="font-size:12px;color:var(--text2)">记住</div>
+          </div>
+          <div style="flex:1;background:var(--warning-bg);border:1px solid #FDE68A;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:20px;font-weight:700;color:var(--warning)">${cardsFuzzy}</div>
+            <div style="font-size:12px;color:var(--text2)">模糊</div>
+          </div>
+          <div style="flex:1;background:var(--danger-bg);border:1px solid #FECACA;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:20px;font-weight:700;color:var(--danger)">${cardsWrong}</div>
+            <div style="font-size:12px;color:var(--text2)">不会</div>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--bg3)"></div></div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">掌握率 ${cardsDone>0?Math.round(cardsKnow/cardsDone*100):0}%</div>
       </div>
     </div>`;
   }
-  
+
   html += `<button onclick="if(confirm('确定清除所有进度？')){localStorage.removeItem('fund_exam_progress');updateAll()}" style="width:100%;padding:12px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:10px;cursor:pointer;font-size:14px">清除所有进度</button>`;
-  
+
   document.getElementById('stats-detail').innerHTML = html;
 }
 
@@ -1149,6 +1171,103 @@ function clearWrongQuestions() {
   delete wb[currentSubject];
   saveWrongBook(wb);
   showWrongQuestions();
+}
+
+function showCardsEdit(subject) {
+  const p = getProgress();
+  const subjP = p[subject] || {};
+  const cards = subjP.cards || {};
+  const knList = knowledge[subject] || [];
+  const cardsDone = Object.keys(cards).length;
+  const cardsKnow = Object.values(cards).filter(v => v === 2).length;
+  const cardsFuzzy = Object.values(cards).filter(v => v === 1).length;
+  const cardsWrong = Object.values(cards).filter(v => v === 0).length;
+  const cardsNew = knList.length - cardsDone;
+
+  let html = `<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center" onclick="this.remove()">
+    <div onclick="event.stopPropagation()" style="background:var(--bg2);border-radius:14px;padding:20px;width:90%;max-width:500px;max-height:80vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="margin:0;font-size:16px;font-weight:600">${subject} - 闪卡编辑</h3>
+        <button onclick="this.closest('div').parentElement.remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)">×</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button onclick="filterEditCards(-1)" style="flex:1;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px">未学 (${cardsNew})</button>
+        <button onclick="filterEditCards(0)" style="flex:1;padding:8px;background:var(--danger-bg);border:1px solid #FECACA;border-radius:8px;cursor:pointer;font-size:13px;color:var(--danger)">不会 (${Object.values(cards).filter(v=>v===0).length})</button>
+        <button onclick="filterEditCards(1)" style="flex:1;padding:8px;background:var(--warning-bg);border:1px solid #FDE68A;border-radius:8px;cursor:pointer;font-size:13px;color:var(--warning)">模糊 (${Object.values(cards).filter(v=>v===1).length})</button>
+        <button onclick="filterEditCards(2)" style="flex:1;padding:8px;background:var(--success-bg);border:1px solid #BBF7D0;border-radius:8px;cursor:pointer;font-size:13px;color:var(--success)">记住 (${Object.values(cards).filter(v=>v===2).length})</button>
+      </div>
+      <div id="edit-cards-list" style="max-height:400px;overflow-y:auto"></div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  window._editFilter = -1;
+  window._editSubject = subject;
+  renderEditCards();
+}
+
+function filterEditCards(filter) {
+  window._editFilter = filter;
+  renderEditCards();
+}
+
+function renderEditCards() {
+  const subject = window._editSubject;
+  const filter = window._editFilter;
+  const p = getProgress();
+  const cards = (p[subject] || {}).cards || {};
+  const knList = knowledge[subject] || [];
+
+  let items = knList.filter((k, i) => {
+    const key = 'kn_' + i;
+    const rating = cards[key];
+    if (filter === -1) return rating === undefined || rating === -1 || rating === null;
+    return rating === filter;
+  });
+
+  let html = '';
+  items.forEach((k, idx) => {
+    const origIdx = knList.indexOf(k);
+    const key = 'kn_' + origIdx;
+    const rating = cards[key];
+    const impClass = 'imp-' + (k.importance || 1);
+    const labels = ['未学', '不会', '模糊', '记住'];
+    const colors = ['var(--text2)', 'var(--danger)', 'var(--warning)', 'var(--success)'];
+
+    html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="font-size:13px;font-weight:600">${k.title || k.section || ''}</div>
+        <select onchange="updateCardRating('${subject}','${key}',this.value)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);font-size:13px">
+          <option value="-1" ${rating===undefined||rating===-1?'selected':''}>未学</option>
+          <option value="0" ${rating===0?'selected':''}>不会</option>
+          <option value="1" ${rating===1?'selected':''}>模糊</option>
+          <option value="2" ${rating===2?'selected':''}>记住</option>
+        </select>
+      </div>
+      <div style="font-size:12px;color:var(--text2)">${k.chapter || ''}</div>
+      <div style="font-size:12px;color:${colors[rating===undefined?-1:rating+1]||'var(--text2)'};margin-top:4px">${labels[rating===undefined?-1:rating+1]||'未学'}</div>
+    </div>`;
+  });
+
+  if (items.length === 0) {
+    html = '<div style="text-align:center;padding:30px;color:var(--text2)">没有匹配的知识点</div>';
+  }
+
+  document.getElementById('edit-cards-list').innerHTML = html;
+}
+
+function updateCardRating(subject, key, value) {
+  const p = getProgress();
+  if (!p[subject]) p[subject] = {};
+  if (!p[subject].cards) p[subject].cards = {};
+  const val = parseInt(value);
+  if (val === -1) {
+    delete p[subject].cards[key];
+  } else {
+    p[subject].cards[key] = val;
+  }
+  saveProgress(p);
+  showCardsEdit(subject);
+  updateStats();
 }
 
 // 启动
