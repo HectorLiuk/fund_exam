@@ -102,6 +102,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .knowledge-card.imp-1 { border-left-color: var(--primary); }
 .knowledge-card .kn-chapter { font-size: 12px; color: var(--text2); }
 .knowledge-card .kn-title { font-size: 15px; font-weight: 600; margin: 4px 0; word-break: break-word; }
+.knowledge-card { position: relative; }
 .knowledge-card .kn-content { font-size: 13px; color: var(--text2); line-height: 1.6; margin-top: 8px; }
 .knowledge-card .kn-tags { display: flex; gap: 6px; margin-top: 6px; }
 .knowledge-card .kn-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
@@ -300,6 +301,14 @@ let mockType = 'all';
 let mockState = null; // {paper, index, answers:{}, timer, startTime}
 let wrongSource = 'all';
 let wrongQuiz = null, wrongAnswered = false;
+let knBookmark = {}; // {subject: index}
+
+function getKnBookmark() {
+  return JSON.parse(localStorage.getItem('fund_exam_bookmark') || '{}');
+}
+function saveKnBookmark(b) {
+  localStorage.setItem('fund_exam_bookmark', JSON.stringify(b));
+}
 
 // ========== Markdown 渲染 ==========
 function renderMarkdown(text) {
@@ -652,7 +661,9 @@ function setKnFilter(f) {
 
 function showKnowledge() {
   const items = knowledge[currentSubject] || [];
-  
+  const bm = getKnBookmark();
+  const bmIdx = bm[currentSubject];
+
   const chapters = [...new Set(items.map(k => k.chapter))];
   let chHtml = '<button class="filter-btn '+(knChapter==='all'?'active':'')+'" onclick="knChapter=\'all\';showKnowledge()">全部章节</button>';
   chapters.forEach(ch => {
@@ -660,14 +671,14 @@ function showKnowledge() {
     chHtml += `<button class="filter-btn ${knChapter===ch?'active':''}" onclick="knChapter='${ch}';showKnowledge()">${short}</button>`;
   });
   document.getElementById('chapter-filter').innerHTML = chHtml;
-  
+
   let filtered = items;
   if (knChapter !== 'all') filtered = filtered.filter(k => k.chapter === knChapter);
   if (knFilter === '3') filtered = filtered.filter(k => k.importance === 3);
   if (knFilter === '2') filtered = filtered.filter(k => k.importance === 2);
   if (knFilter === 'number') filtered = filtered.filter(k => k.is_number);
   if (knFilter === 'confusing') filtered = filtered.filter(k => k.is_confusing);
-  
+
   let html = '';
   filtered.forEach((k, i) => {
     const impClass = 'imp-' + k.importance;
@@ -675,16 +686,37 @@ function showKnowledge() {
     if (k.is_number) tags += '<span class="kn-tag number">数字</span>';
     if (k.is_confusing) tags += '<span class="kn-tag confusing">易混</span>';
     const impLabel = ['','·','··','···'][k.importance];
-    
-    html += `<div class="knowledge-card ${impClass}">
+    const isBookmarked = bmIdx === i;
+    html += `<div class="knowledge-card ${impClass} ${isBookmarked?'bm':''}" id="kc${i}">
+      ${isBookmarked?'<div style="background:var(--primary);color:white;font-size:11px;padding:2px 8px;border-radius:0 0 6px 0;position:absolute;top:0;right:0">书签</div>':''}
       <div class="kn-chapter">${k.chapter} ${impLabel}</div>
       <div class="kn-title">${k.title || k.section || ''}</div>
       <div class="kn-tags">${tags}</div>
       <div class="kn-content md-content">${renderMarkdown(k.content||'')}</div>
+      <button onclick="toggleKnBookmark(${i})" style="margin-top:8px;padding:4px 10px;background:${isBookmarked?'var(--primary)':'var(--bg3)'};color:${isBookmarked?'white':'var(--text2)'};border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px">${isBookmarked?'取消书签':'添加书签'}</button>
     </div>`;
   });
-  
+
   document.getElementById('knowledge-list').innerHTML = html || '<div style="text-align:center;padding:40px;color:var(--text2)">没有匹配的知识点</div>';
+
+  // 自动滚动到书签位置
+  if (bmIdx !== undefined && bmIdx !== null && filtered.length > 0) {
+    setTimeout(() => {
+      const el = document.getElementById('kc' + bmIdx);
+      if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
+    }, 100);
+  }
+}
+
+function toggleKnBookmark(idx) {
+  const bm = getKnBookmark();
+  if (bm[currentSubject] === idx) {
+    delete bm[currentSubject];
+  } else {
+    bm[currentSubject] = idx;
+  }
+  saveKnBookmark(bm);
+  showKnowledge();
 }
 
 // ========== 进度统计 ==========
