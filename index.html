@@ -146,7 +146,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 </head>
 <body>
 <div id="loading" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);z-index:9999">
-  <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:12px">数据文件中...</div>
+  <div id="loading-text" style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:12px">数据文件中...</div>
   <div style="font-size:14px;color:var(--text2)">文件较大，请稍候</div>
 </div>
 <div class="container">
@@ -235,6 +235,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <button class="filter-btn" onclick="setMockType('真题')">真题</button>
         <button class="filter-btn" onclick="setMockType('预测卷')">预测卷</button>
         <button class="filter-btn" onclick="setMockType('点题卷')">点题卷</button>
+        <button class="filter-btn" onclick="setMockType('ai')">AI选题</button>
       </div>
       <div id="mock-list" class="knowledge-list"></div>
     </div>
@@ -291,7 +292,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 </div>
 
 <script>
-let questions = {}, knowledge = {}, mockExams = {};
+let questions = {}, knowledge = {}, mockExams = {}, aiQuestions = {};
 let currentSubject = '法规', currentMode = 'flashcard';
 let flashType = 'knowledge', flashFilter = 'all';
 let quizSource = 'all', knFilter = 'all', knChapter = 'all';
@@ -372,14 +373,32 @@ function saveProgress(p) {
   localStorage.setItem('fund_exam_progress', JSON.stringify(p));
 }
 
-// 加载数据
+// 加载数据（串行加载，避免大文件并发阻塞）
 async function loadData() {
-  const [qResp, kResp, mResp] = await Promise.all([
-    fetch('questions.json'), fetch('knowledge.json'), fetch('mock_exams.json')
-  ]);
-  questions = await qResp.json();
-  knowledge = await kResp.json();
-  mockExams = await mResp.json();
+  try {
+    document.getElementById('loading-text').textContent = '加载 questions.json...';
+    const qResp = await fetch('questions.json');
+    questions = await qResp.json();
+  } catch(e) { questions = {}; }
+
+  try {
+    document.getElementById('loading-text').textContent = '加载 knowledge.json...';
+    const kResp = await fetch('knowledge.json');
+    knowledge = await kResp.json();
+  } catch(e) { knowledge = {}; }
+
+  try {
+    document.getElementById('loading-text').textContent = '加载 mock_exams.json（较大，请稍候）...';
+    const mResp = await fetch('mock_exams.json');
+    mockExams = await mResp.json();
+  } catch(e) { mockExams = {}; }
+
+  try {
+    document.getElementById('loading-text').textContent = '加载 ai_QA.json...';
+    const aiResp = await fetch('ai_QA.json');
+    aiQuestions = await aiResp.json();
+  } catch(e) { aiQuestions = {}; }
+
   document.getElementById('loading').style.display = 'none';
   updateAll();
 }
@@ -782,7 +801,12 @@ function showStatsDetail() {
 function setMockType(t) {
   mockType = t;
   document.querySelectorAll('#mode-mock .filter-bar .filter-btn').forEach(b => {
-    b.classList.toggle('active', b.textContent.includes(t==='all'?'全部':t));
+    const txt = b.textContent.toLowerCase();
+    if (t === 'all') {
+      b.classList.toggle('active', b.textContent.includes('全部'));
+    } else {
+      b.classList.toggle('active', txt.includes(t.toLowerCase()));
+    }
   });
   showMockList();
 }
@@ -792,34 +816,91 @@ function showMockList() {
   document.getElementById('mock-select').classList.remove('hidden');
   document.getElementById('mock-exam').classList.add('hidden');
   document.getElementById('mock-result').classList.add('hidden');
-  
-  const papers = mockExams[currentSubject] || [];
-  let filtered = mockType === 'all' ? papers : papers.filter(p => p.type === mockType);
-  
-  const p = getProgress();
-  const mockHistory = (p[currentSubject] || {}).mock || {};
-  
+
   let html = '';
-  filtered.forEach((paper, i) => {
-    const history = mockHistory[paper.name];
-    let badge = '';
-    if (history) {
-      badge = `<span style="font-size:12px;padding:2px 8px;border-radius:4px;background:var(--success-bg);color:var(--success)">${history.score}分</span>`;
-    }
-    const typeColor = paper.type === '真题' ? 'var(--danger)' : paper.type === '预测卷' ? 'var(--primary)' : 'var(--warning)';
-    
-    html += `<div class="knowledge-card" style="border-left-color:${typeColor}" onclick="startMockExam(${i})">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div class="kn-chapter">${paper.type} · ${paper.year || ''} · ${paper.question_count}题</div>
-          <div class="kn-title">${paper.name}</div>
+
+  if (mockType === 'ai') {
+    // AI选题模式：从ai_QA.json随机抽取
+    const aiData = aiQuestions[currentSubject] || [];
+    if (aiData.length > 0) {
+      const total = aiData.length;
+      html = `<div class="knowledge-card" style="border-left-color:var(--primary)" onclick="startAIMockExam()">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="kn-chapter">AI选题 · 随机出题</div>
+            <div class="kn-title">AI智能选题（当前${total}题）</div>
+          </div>
         </div>
-        <div>${badge}</div>
-      </div>
-    </div>`;
-  });
-  
-  document.getElementById('mock-list').innerHTML = html || '<div style="text-align:center;padding:40px;color:var(--text2)">没有匹配的试卷</div>';
+      </div>`;
+    } else {
+      html = '<div style="text-align:center;padding:40px;color:var(--text2)">暂无AI选题数据</div>';
+    }
+  } else {
+    // 常规试卷模式
+    const papers = mockExams[currentSubject] || [];
+    let filtered = mockType === 'all' ? papers : papers.filter(p => p.type === mockType);
+
+    const p = getProgress();
+    const mockHistory = (p[currentSubject] || {}).mock || {};
+
+    filtered.forEach((paper, i) => {
+      const history = mockHistory[paper.name];
+      let badge = '';
+      if (history) {
+        badge = `<span style="font-size:12px;padding:2px 8px;border-radius:4px;background:var(--success-bg);color:var(--success)">${history.score}分</span>`;
+      }
+      const typeColor = paper.type === '真题' ? 'var(--danger)' : paper.type === '预测卷' ? 'var(--primary)' : 'var(--warning)';
+
+      html += `<div class="knowledge-card" style="border-left-color:${typeColor}" onclick="startMockExam(${i})">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="kn-chapter">${paper.type} · ${paper.year || ''} · ${paper.question_count}题</div>
+            <div class="kn-title">${paper.name}</div>
+          </div>
+          <div>${badge}</div>
+        </div>
+      </div>`;
+    });
+
+    if (!html) {
+      html = '<div style="text-align:center;padding:40px;color:var(--text2)">没有匹配的试卷</div>';
+    }
+  }
+
+  document.getElementById('mock-list').innerHTML = html;
+}
+
+function startAIMockExam() {
+  const aiData = aiQuestions[currentSubject] || [];
+  if (aiData.length === 0) return;
+
+  // 随机打乱并选取全部题目
+  const shuffled = [...aiData].sort(() => Math.random() - 0.5);
+  const paper = {
+    name: 'AI智能选题',
+    type: 'AI选题',
+    question_count: shuffled.length,
+    questions: shuffled
+  };
+
+  mockState = {
+    paper: paper,
+    index: 0,
+    answers: {},
+    startTime: Date.now(),
+    timer: null,
+    finished: false
+  };
+
+  document.getElementById('mock-select').classList.add('hidden');
+  document.getElementById('mock-exam').classList.remove('hidden');
+  document.getElementById('mock-result').classList.add('hidden');
+  document.getElementById('mock-title').textContent = paper.name + '（不计入总进度）';
+
+  mockState.timer = setInterval(updateMockTimer, 1000);
+  updateMockTimer();
+  renderMockQuestion();
+  renderAnswerSheet();
 }
 
 function startMockExam(idx) {
@@ -827,7 +908,7 @@ function startMockExam(idx) {
   let filtered = mockType === 'all' ? papers : papers.filter(p => p.type === mockType);
   const paper = filtered[idx];
   if (!paper) return;
-  
+
   mockState = {
     paper: paper,
     index: 0,
@@ -963,18 +1044,20 @@ function finishMockExam() {
   const usedMin = Math.floor(elapsed / 60);
   const usedSec = elapsed % 60;
   
-  // Save result
-  const p = getProgress();
-  if (!p[currentSubject]) p[currentSubject] = {};
-  if (!p[currentSubject].mock) p[currentSubject].mock = {};
-  p[currentSubject].mock[mockState.paper.name] = {
-    score: score,
-    correct: correct,
-    total: total,
-    time: `${usedMin}分${usedSec}秒`,
-    date: new Date().toLocaleDateString()
-  };
-  saveProgress(p);
+// Save result (skip for AI exams)
+  if (mockState.paper.type !== 'AI选题') {
+    const p = getProgress();
+    if (!p[currentSubject]) p[currentSubject] = {};
+    if (!p[currentSubject].mock) p[currentSubject].mock = {};
+    p[currentSubject].mock[mockState.paper.name] = {
+      score: score,
+      correct: correct,
+      total: total,
+      time: `${usedMin}分${usedSec}秒`,
+      date: new Date().toLocaleDateString()
+    };
+    saveProgress(p);
+  }
   
   // 模考错题收集
   for (let i = 0; i < qs.length; i++) {
