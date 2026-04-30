@@ -1088,8 +1088,18 @@ function finishMockExam() {
   showWrong.forEach(i => {
     const q = qs[i];
     const userAns = mockState.answers[i] || '未答';
+    let optionsHtml = '';
+    for (const key of ['A','B','C','D']) {
+      if (q.options?.[key]) {
+        const isRight = key === q.answer;
+        const isUser = key === userAns;
+        const cls = isRight ? 'color:var(--success);font-weight:600' : isUser ? 'color:var(--danger);text-decoration:line-through' : 'color:var(--text2)';
+        optionsHtml += `<div style="font-size:13px;${cls}">${key}. ${q.options[key]}</div>`;
+      }
+    }
     html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px">
       <div style="font-size:14px;line-height:1.6;margin-bottom:8px" class="md-content">${renderMarkdown(q.stem)}</div>
+      <div style="margin:8px 0">${optionsHtml}</div>
       <div style="font-size:13px;color:var(--danger)">你的答案: ${userAns}</div>
       <div style="font-size:13px;color:var(--success)">正确答案: ${q.answer}</div>
       ${q.analysis ? '<div style="font-size:13px;color:var(--text2);margin-top:6px;border-top:1px solid var(--border);padding-top:6px" class="md-content">'+renderMarkdown(q.analysis)+'</div>' : ''}
@@ -1190,14 +1200,25 @@ function showWrongQuestions() {
   html += '<div style="margin-top:8px">';
   wrongList.forEach(([key, q]) => {
     const streakDots = '●'.repeat(q.correctStreak) + '○'.repeat(2 - q.correctStreak);
+    let optionsHtml = '';
+    for (const optKey of ['A','B','C','D']) {
+      if (q.options?.[optKey]) {
+        const isRight = optKey === q.answer;
+        const isUser = optKey === q.userAnswer;
+        const cls = isRight ? 'color:var(--success);font-weight:600' : isUser ? 'color:var(--danger);text-decoration:line-through' : 'color:var(--text2)';
+        optionsHtml += `<div style="font-size:13px;${cls}">${optKey}. ${q.options[optKey]}</div>`;
+      }
+    }
     html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div style="font-size:13px;color:var(--text2)">${q.source==='mock'?'模考':'刷题'} · 错 ${q.wrongCount} 次</div>
         <div style="font-size:12px;color:var(--text2)">${streakDots}</div>
       </div>
-      <div style="font-size:14px;line-height:1.6" class="md-content">${renderMarkdown(q.stem)}</div>
-      <div style="font-size:13px;margin-top:6px;color:var(--danger)">你答: ${q.userAnswer}</div>
+      <div style="font-size:14px;line-height:1.6;margin-bottom:8px" class="md-content">${renderMarkdown(q.stem)}</div>
+      <div style="margin:8px 0">${optionsHtml}</div>
+      <div style="font-size:13px;color:var(--danger)">你答: ${q.userAnswer}</div>
       <div style="font-size:13px;color:var(--success)">正确: ${q.answer}</div>
+      ${q.analysis ? '<div style="font-size:13px;color:var(--text2);margin-top:6px;border-top:1px solid var(--border);padding-top:6px" class="md-content">'+renderMarkdown(q.analysis)+'</div>' : ''}
     </div>`;
   });
   html += '</div>';
